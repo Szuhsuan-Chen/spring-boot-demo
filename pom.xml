@@ -1,5 +1,13 @@
+<!-- 專案描述檔 告訴Maven怎麼編譯 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0">
   <modelVersion>4.0.0</modelVersion>
+  <!-- 引用另一個專案描述檔 -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.4</version>
+    <relativePath/>
+  </parent>
   <!-- 組織名稱 -->
   <groupId>training</groupId>
   <!-- 專案名稱 -->
@@ -9,7 +17,22 @@
     <!-- 編譯時的編碼 -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- 使用的 Java 版本 -->
-    <maven.compiler.source>20</maven.compiler.source>
-    <maven.compiler.target>20</maven.compiler.target>
+    <java.version>21</java.version>
   </properties>
+  <!-- 專案依賴哪些別的專案 -->
+  <dependencies>
+    <!-- Spring Boot Web Starter -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 </project>
