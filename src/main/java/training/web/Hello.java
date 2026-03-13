@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 //加入首頁
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 //標示成Spring Boot應用程式
 @SpringBootApplication
@@ -28,13 +29,26 @@ public class Hello {
         return "Hello, Routing Test!";
     }
 
+    //處理來自路徑 /echo?name=名字 的請求
+    @GetMapping("/echo")
+    public String echo(@RequestParam("name") String name) {
+        return "Echo: " + name;
+    }
+
+    //處理來自路徑 /add?n1=整數&n2=整數 的請求
+    @GetMapping("/add")
+    public String add(@RequestParam("n1") int n1, @RequestParam("n2") int n2) {
+        int result = n1 + n2;
+        return "The sum of " + n1 + " and " + n2 + " is " + result + ".";
+    }
+
     //處理來自路徑 /test/任意的文字 的請求
     @GetMapping("/test/{name}")
     public String test(@PathVariable String name) {
         return "Hello, " + name + "!";
     }
 
-    //處理來自路徑 /square/任意的文字 的請求
+    //處理來自路徑 /square/任意的數字 的請求
     @GetMapping("/square/{number}")
     public String square(@PathVariable int number) {
         int result = number * number;
