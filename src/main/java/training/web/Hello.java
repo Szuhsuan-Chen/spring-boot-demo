@@ -1,6 +1,7 @@
 package training.web;
 import java.util.List;
 import java.util.Map;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +26,26 @@ public class Hello {
         return "Hello, Spring Boot!";
     }
 
+    /* HttpSession 狀態管理 */
+    //處理來自路徑 /hello?name=名字 的請求
+    @GetMapping("/hello")
+    public String hello(HttpSession session, @RequestParam("name") String name) {
+        session.setAttribute("user-name", name);
+        return "Hello, " + name + "!";
+    }
+
+    //處理來自路徑 /back 的請求
+    @GetMapping("/back")
+    public String back(HttpSession session){
+        String name = (String)session.getAttribute("user-name");
+        if (name == null) {
+            return "Welcome Back, Who Are You?";
+        }
+        else {
+            return "Welcome Back, " + name + "!";
+        }
+    }
+
     //處理來自路徑 /getIntArray 的請求
     @GetMapping("/getIntArray")
     public int[] getIntArray() {
@@ -38,8 +59,8 @@ public class Hello {
         return data;
     }
 
-    @GetMapping("/getCoordinates")
-    public Map getCoordinates() {
+    @GetMapping("/getMap")
+    public Map getMap() {
         Map data = Map.of("x", 10, "y", 20, "z", 30);
         return data;
     }
@@ -51,7 +72,7 @@ public class Hello {
     }
 
     @GetMapping("/getPointList")
-    public List getPointList() {
+    public List<Point> getPointList() {
         Point p1 = new Point(10, 20);
         Point p2 = new Point(30, 40);
         return List.of(p1, p2);

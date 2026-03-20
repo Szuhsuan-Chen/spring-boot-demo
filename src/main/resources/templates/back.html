@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h3>歡迎回來</h3>
+    <th:block th:if="${name}==null">
+        <div>Welcome Back, Who Are You?</div>
+    </th:block>
+    <th:block th:unless="${name}==null">
+        <div>Welcome Back, <span th:text="${name}"></span>!</div>
+    </th:block>
+</body>
+</html>
