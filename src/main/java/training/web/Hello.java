@@ -1,6 +1,10 @@
 package training.web;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -11,6 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+//載入 MySQL Driver/Connector
+import java.sql.Connection;
+import java.sql.Statement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 //標示成Spring Boot應用程式
 @SpringBootApplication
 @RestController
@@ -18,6 +28,57 @@ public class Hello {
     public static void main(String[] args) {
         //啟動網站應用 http://127.0.0.1:8080
         SpringApplication.run(Hello.class, args);
+        //載入 MySQL Driver/Connector
+        try{
+            Class.forName("com.mysql.cj.jdbc.Driver").getDeclaredConstructor().newInstance();
+        }catch(Exception e){
+            System.out.println(e.getMessage());
+        }
+    }
+
+    //處理來自路徑 /execute 的請求
+    @GetMapping("/execute")
+    public String[] execute() {
+        String[] data = executeSQL();
+        return data;
+    }
+
+    private String[] executeSQL() {
+        Connection con = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+        try{
+            //主要的資料庫連線邏輯
+            //建立連線
+            con = DriverManager.getConnection("jdbc:mysql://localhost/website?user=root&password=root123");
+            stmt = con.createStatement();
+            //更新資料庫的資料
+            // stmt.execute("UPDATE member SET name='彭彭' WHERE id=1");
+            // System.out.println(stmt.getUpdateCount());
+            //取得資料庫的資料
+            stmt.executeQuery("SELECT * FROM member");
+            rs = stmt.getResultSet();
+            ArrayList<String> data = new ArrayList<>();
+            while(rs.next()){ //如果還有下一筆資料，在迴圈中抓取資料
+                System.out.println(rs.getString("name"));
+                data.add(rs.getString("name"));
+            }
+            return data.toArray(new String[0]); //轉換為字串陣列回傳
+        }catch(SQLException e){
+            //有錯誤的時候要怎麼辦
+            System.out.println(e.getMessage());     
+        }finally{
+            //確保資料庫連線能夠被關閉
+            try{
+                if(con != null){
+                    con.close();
+                }
+            }
+            catch(SQLException e){
+                System.out.println(e.getMessage());
+            }
+        }
+        return new String[0];
     }
 
     //首頁
