@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 //加入首頁
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 //載入 MySQL Driver/Connector
@@ -153,7 +154,14 @@ public class Hello {
 
     //處理來自路徑 /add?n1=整數&n2=整數 的請求
     @GetMapping("/add")
-    public Map add(@RequestParam("n1") int n1, @RequestParam("n2") int n2) {
+    public Map addGet(@RequestParam("n1") int n1, @RequestParam("n2") int n2) {
+        int result = n1 + n2;
+        return Map.of("result", result);
+    }
+
+    // 處理來自路徑 /add 的 POST 請求，參數 n1, n2 從 Request Body 傳入
+    @PostMapping("/add")
+    public Map addPost(@RequestParam("n1") int n1, @RequestParam("n2") int n2) {
         int result = n1 + n2;
         return Map.of("result", result);
     }
