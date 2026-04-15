@@ -113,16 +113,17 @@ public class Hello {
         }
     }
     @PutMapping("/api/member/auth")
-    public Map signin(HttpSession session, @RequestParam String email, @RequestParam String password){
+    public Map signin(HttpSession session, @RequestParam String email, @RequestParam String password) {
         // 如果會話中已經有會員名稱，表示用戶已登入，無需再次登入
         if (session.getAttribute("member-name") != null) {
+            // 這裡可以返回一個特定的訊息，讓前端判斷並導向會員頁面
             return Map.of("ok", true, "message", "Already logged in");
         }
 
         String name = getMemberName(email, password);
-        if(name == null){
+        if (name == null) {
             return Map.of("ok", false);
-        }else{
+        } else {
             session.setAttribute("member-name", name); //設定使用者身份為從資料庫抓取到的姓名
             return Map.of("ok", true);
         }
@@ -136,5 +137,12 @@ public class Hello {
         }else{
             return Map.of("ok", true, "name", name);
         }
+    }
+
+    //登出會員帳號的API
+    @PostMapping("/api/member/logout")
+    public Map signout(HttpSession session){
+        session.invalidate(); // 使當前會話失效，清除所有會話資料
+        return Map.of("ok", true);
     }
 }
