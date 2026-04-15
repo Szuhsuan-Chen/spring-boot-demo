@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>會員頁</title>
+</head>
+<body>
+    <h3>會員頁面</h3>
+    <p>歡迎來到會員專區！這裡是會員專屬的內容。</p>
+    <div id="welcome"></div>
+    <script>
+        async function check() {
+            let response = await fetch('/api/member/auth');
+            let result = await response.json();
+            if (result.ok === false) {
+                window.location = '/';
+            } else {
+                document.querySelector('#welcome').textContent = '歡迎，' + result.name + '！';
+            }
+        }
+        check();
+    </script> 
+</body>
+</html>

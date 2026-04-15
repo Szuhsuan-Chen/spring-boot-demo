@@ -1,24 +1,16 @@
 package training.web;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.PathVariable;
-
-//加入首頁
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
-//載入 MySQL Driver/Connector
+import java.sql.DriverManager;
 import java.sql.Connection;
-import java.sql.Statement;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -37,145 +29,112 @@ public class Hello {
         }
     }
 
-    //處理來自路徑 /execute 的請求
-    @GetMapping("/execute")
-    public String[] execute() {
-        String[] data = executeSQL();
-        return data;
-    }
-
-    private String[] executeSQL() {
+    //註冊會員帳號的API
+    private boolean insertmember(String name, String email, String password) {
         Connection con = null;
-        Statement stmt = null;
+        PreparedStatement stmt = null;
         ResultSet rs = null;
-        try{
-            //主要的資料庫連線邏輯
-            //建立連線
-            con = DriverManager.getConnection("jdbc:mysql://localhost/website?user=root&password=root123");
-            stmt = con.createStatement();
-            //更新資料庫的資料
-            // stmt.execute("UPDATE member SET name='彭彭' WHERE id=1");
-            // System.out.println(stmt.getUpdateCount());
-            //取得資料庫的資料
-            stmt.executeQuery("SELECT * FROM member");
-            rs = stmt.getResultSet();
-            ArrayList<String> data = new ArrayList<>();
-            while(rs.next()){ //如果還有下一筆資料，在迴圈中抓取資料
-                System.out.println(rs.getString("name"));
-                data.add(rs.getString("name"));
+        try {
+            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/mywebsite?user=root&password=root123");
+            stmt = con.prepareStatement("SELECT * FROM member WHERE email = ?");
+            stmt.setNString(1, email);
+            rs = stmt.executeQuery();
+            if(rs.next()){ //如果有資料，表示此Email已被註冊
+                return false;
             }
-            return data.toArray(new String[0]); //轉換為字串陣列回傳
-        }catch(SQLException e){
-            //有錯誤的時候要怎麼辦
-            System.out.println(e.getMessage());     
-        }finally{
-            //確保資料庫連線能夠被關閉
-            try{
-                if(con != null){
+            //如果沒有資料，表示此Email未被註冊，可以新增會員資料
+            stmt = con.prepareStatement("INSERT INTO member(name, email, password) VALUES(?, ?, ?)");
+            stmt.setNString(1, name);
+            stmt.setNString(2, email);
+            stmt.setNString(3, password);
+            stmt.execute();
+            return true;  //沒有跳到錯誤的區塊，那就是成功
+        }
+        catch(SQLException e){
+            System.out.println(e.getMessage());
+            return false;
+        }
+        finally {  //確保連線關閉
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (stmt != null) {
+                    stmt.close();
+                }
+                if (con != null) {
                     con.close();
                 }
-            }
-            catch(SQLException e){
+            } catch (SQLException e) {
                 System.out.println(e.getMessage());
             }
         }
-        return new String[0];
+    }
+    @PostMapping("/api/member")
+    public Map signup(@RequestParam String name, @RequestParam String email, @RequestParam String password){
+        boolean result = insertmember(name, email, password);
+        return Map.of("ok", result);
     }
 
-    //首頁
-    @GetMapping("/")
-    public String index() {
-        return "Hello, Spring Boot!";
-    }
-
-    /* HttpSession 狀態管理 */
-    //處理來自路徑 /hello?name=名字 的請求
-    @GetMapping("/hello")
-    public String hello(HttpSession session, @RequestParam("name") String name) {
-        session.setAttribute("user-name", name);
-        return "Hello, " + name + "!";
-    }
-
-    //處理來自路徑 /back 的請求
-    @GetMapping("/back")
-    public String back(HttpSession session){
-        String name = (String)session.getAttribute("user-name");
-        if (name == null) {
-            return "Welcome Back, Who Are You?";
+    //登入會員帳號的API
+    public String getMemberName(String email, String password){
+        Connection con = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        try {
+            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/mywebsite?user=root&password=root123");
+            stmt = con.prepareStatement("SELECT name FROM member WHERE email = ? AND password = ?");
+            stmt.setNString(1, email);
+            stmt.setNString(2, password);
+            rs = stmt.executeQuery();
+            if(rs.next()){  //如果有資料，表示帳號密碼正確，回傳姓名
+                return rs.getString("name");
+            }
+            return null;
         }
-        else {
-            return "Welcome Back, " + name + "!";
+        catch(SQLException e){
+            System.out.println(e.getMessage());
+            return null;
+        }
+        finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (stmt != null) {
+                    stmt.close();
+                }
+                if (con != null) {
+                    con.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
+    @PutMapping("/api/member/auth")
+    public Map signin(HttpSession session, @RequestParam String email, @RequestParam String password){
+        // 如果會話中已經有會員名稱，表示用戶已登入，無需再次登入
+        if (session.getAttribute("member-name") != null) {
+            return Map.of("ok", true, "message", "Already logged in");
+        }
 
-    //處理來自路徑 /getIntArray 的請求
-    @GetMapping("/getIntArray")
-    public int[] getIntArray() {
-        int[] data = {10, 1, 3, 4};
-        return data;
+        String name = getMemberName(email, password);
+        if(name == null){
+            return Map.of("ok", false);
+        }else{
+            session.setAttribute("member-name", name); //設定使用者身份為從資料庫抓取到的姓名
+            return Map.of("ok", true);
+        }
     }
-
-    @GetMapping("/getIntList")
-    public List<Integer> getIntList() {
-        List<Integer> data = List.of(3, 10, 2, 1);
-        return data;
-    }
-
-    @GetMapping("/getMap")
-    public Map getMap() {
-        Map data = Map.of("x", 10, "y", 20, "z", 30);
-        return data;
-    }
-
-    @GetMapping("/getPoint")
-    public Point getPoint() {
-        Point p1 = new Point(10, 20);
-        return p1;
-    }
-
-    @GetMapping("/getPointList")
-    public List<Point> getPointList() {
-        Point p1 = new Point(10, 20);
-        Point p2 = new Point(30, 40);
-        return List.of(p1, p2);
-    }
-
-    @GetMapping("/getStudentGrades")
-    public Map getStudentGrades() {
-        int[] data = {60, 70 , 80, 90};
-        return Map.of("name", "Student Grade", "data", data);
-    }
-
-    //處理來自路徑 /echo?name=名字 的請求
-    @GetMapping("/echo")
-    public String echo(@RequestParam("name") String name) {
-        return "Echo: " + name;
-    }
-
-    //處理來自路徑 /add?n1=整數&n2=整數 的請求
-    @GetMapping("/add")
-    public Map addGet(@RequestParam("n1") int n1, @RequestParam("n2") int n2) {
-        int result = n1 + n2;
-        return Map.of("result", result);
-    }
-
-    // 處理來自路徑 /add 的 POST 請求，參數 n1, n2 從 Request Body 傳入
-    @PostMapping("/add")
-    public Map addPost(@RequestParam("n1") int n1, @RequestParam("n2") int n2) {
-        int result = n1 + n2;
-        return Map.of("result", result);
-    }
-
-    //處理來自路徑 /test/任意的文字 的請求
-    @GetMapping("/test/{name}")
-    public String test(@PathVariable String name) {
-        return "Hello, " + name + "!";
-    }
-
-    //處理來自路徑 /square/任意的數字 的請求
-    @GetMapping("/square/{number}")
-    public String square(@PathVariable int number) {
-        int result = number * number;
-        return "The square of " + number + " is " + result + ".";
+    //檢查會員登入狀態的API
+    @GetMapping("/api/member/auth")
+    public Map checksignin(HttpSession session){
+        String name = (String) session.getAttribute("member-name");
+        if(name == null){
+            return Map.of("ok", false);
+        }else{
+            return Map.of("ok", true, "name", name);
+        }
     }
 }
