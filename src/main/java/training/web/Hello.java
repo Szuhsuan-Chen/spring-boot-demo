@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.sql.DriverManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,6 +19,15 @@ import java.sql.SQLException;
 @SpringBootApplication
 @RestController
 public class Hello {
+    // 由 Spring 注入的密碼編碼器；final 代表建構完成後不再變更
+    private final PasswordEncoder passwordEncoder;
+
+    // 建構子注入：Spring 建立 Hello 時，會自動把 PasswordEncoder 傳進來
+    public Hello(PasswordEncoder passwordEncoder) {
+        // this.passwordEncoder 是類別欄位；右邊 passwordEncoder 是建構子參數
+        this.passwordEncoder = passwordEncoder;
+    }
+
     public static void main(String[] args) {
         //啟動網站應用 http://127.0.0.1:8080
         SpringApplication.run(Hello.class, args);
@@ -46,7 +56,7 @@ public class Hello {
             stmt = con.prepareStatement("INSERT INTO member(name, email, password) VALUES(?, ?, ?)");
             stmt.setNString(1, name);
             stmt.setNString(2, email);
-            stmt.setNString(3, password);
+            stmt.setNString(3, passwordEncoder.encode(password));
             stmt.execute();
             return true;  //沒有跳到錯誤的區塊，那就是成功
         }
@@ -83,11 +93,10 @@ public class Hello {
         ResultSet rs = null;
         try {
             con = DriverManager.getConnection("jdbc:mysql://localhost:3306/mywebsite?user=root&password=root123");
-            stmt = con.prepareStatement("SELECT name FROM member WHERE email = ? AND password = ?");
+            stmt = con.prepareStatement("SELECT name, password FROM member WHERE email = ?");
             stmt.setNString(1, email);
-            stmt.setNString(2, password);
             rs = stmt.executeQuery();
-            if(rs.next()){  //如果有資料，表示帳號密碼正確，回傳姓名
+            if(rs.next() && passwordEncoder.matches(password, rs.getString("password"))){  //如果有資料且密碼驗證通過，回傳姓名
                 return rs.getString("name");
             }
             return null;
