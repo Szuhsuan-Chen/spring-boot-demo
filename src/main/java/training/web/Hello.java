@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import java.sql.DriverManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 
 //標示成Spring Boot應用程式
 @SpringBootApplication
@@ -21,22 +21,18 @@ import java.sql.SQLException;
 public class Hello {
     // 由 Spring 注入的密碼編碼器；final 代表建構完成後不再變更
     private final PasswordEncoder passwordEncoder;
+    private final DataSource dataSource;
 
     // 建構子注入：Spring 建立 Hello 時，會自動把 PasswordEncoder 傳進來
-    public Hello(PasswordEncoder passwordEncoder) {
+    public Hello(PasswordEncoder passwordEncoder, DataSource dataSource) {
         // this.passwordEncoder 是類別欄位；右邊 passwordEncoder 是建構子參數
         this.passwordEncoder = passwordEncoder;
+        this.dataSource = dataSource;
     }
 
     public static void main(String[] args) {
         //啟動網站應用 http://127.0.0.1:8080
         SpringApplication.run(Hello.class, args);
-        //載入 MySQL Driver/Connector
-        try{
-            Class.forName("com.mysql.cj.jdbc.Driver").getDeclaredConstructor().newInstance();
-        }catch(Exception e){
-            System.out.println(e.getMessage());
-        }
     }
 
     //註冊會員帳號的API
@@ -45,7 +41,7 @@ public class Hello {
         PreparedStatement stmt = null;
         ResultSet rs = null;
         try {
-            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/mywebsite?user=root&password=root123");
+            con = dataSource.getConnection();
             stmt = con.prepareStatement("SELECT * FROM member WHERE email = ?");
             stmt.setNString(1, email);
             rs = stmt.executeQuery();
@@ -92,7 +88,7 @@ public class Hello {
         PreparedStatement stmt = null;
         ResultSet rs = null;
         try {
-            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/mywebsite?user=root&password=root123");
+            con = dataSource.getConnection();
             stmt = con.prepareStatement("SELECT name, password FROM member WHERE email = ?");
             stmt.setNString(1, email);
             rs = stmt.executeQuery();
